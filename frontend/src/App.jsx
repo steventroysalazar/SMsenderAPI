@@ -40,7 +40,8 @@ export default function App() {
     };
 
     try {
-      const response = await fetch('/api/send-config', {
+      const apiBase = import.meta.env.VITE_API_BASE || '/api';
+      const response = await fetch(`${apiBase}/send-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

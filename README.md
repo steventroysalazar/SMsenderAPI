@@ -9,7 +9,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-Environment variables for Twilio:
+Environment variables for Twilio (see `backend/.env.example`):
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -27,4 +27,4 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api` requests to `http://localhost:8080`.
+The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can set `VITE_API_BASE` in `frontend/.env.example` when deploying the UI separately.
