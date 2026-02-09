@@ -13,10 +13,10 @@ public class ConfigService {
 
     public ConfigResponse sendConfiguration(ConfigRequest request) {
         List<SmsMessage> messages = commandBuilder.build(request);
-        TwilioSmsSender sender = new TwilioSmsSender(
-            System.getenv("TWILIO_ACCOUNT_SID"),
-            System.getenv("TWILIO_AUTH_TOKEN"),
-            System.getenv("TWILIO_FROM_NUMBER"),
+        VonageSmsSender sender = new VonageSmsSender(
+            System.getenv("VONAGE_API_KEY"),
+            System.getenv("VONAGE_API_SECRET"),
+            System.getenv("VONAGE_FROM_NUMBER"),
             Boolean.parseBoolean(System.getenv().getOrDefault("SMS_DRY_RUN", "true"))
         );
         sender.send(messages);

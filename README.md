@@ -1,6 +1,6 @@
 # SMsenderAPI
 
-This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through Twilio.
+This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through Vonage (Nexmo).
 
 ## Backend (Spring Boot)
 
@@ -9,11 +9,11 @@ cd backend
 mvn spring-boot:run
 ```
 
-Environment variables for Twilio (see `backend/.env.example`):
+Environment variables for Vonage (see `backend/.env.example`):
 
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_FROM_NUMBER`
+- `VONAGE_API_KEY`
+- `VONAGE_API_SECRET`
+- `VONAGE_FROM_NUMBER`
 
 Set `SMS_DRY_RUN=true` (default) to log messages instead of sending real SMS.
 
