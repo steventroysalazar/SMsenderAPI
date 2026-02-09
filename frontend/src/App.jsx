@@ -48,8 +48,24 @@ export default function App() {
       });
 
       if (!response.ok) {
-        const errorPayload = await response.json().catch(() => ({}));
-        throw new Error(errorPayload.message || 'Failed to send configuration.');
+        const fallbackMessage = `Request failed with status ${response.status}.`;
+        const errorText = await response.text();
+        let message = fallbackMessage;
+
+        if (errorText) {
+          try {
+            const errorPayload = JSON.parse(errorText);
+            message =
+              errorPayload.message ||
+              errorPayload.error ||
+              errorPayload.detail ||
+              fallbackMessage;
+          } catch {
+            message = errorText;
+          }
+        }
+
+        throw new Error(message);
       }
 
       const data = await response.json();

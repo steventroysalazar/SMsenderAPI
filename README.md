@@ -28,3 +28,25 @@ npm run dev
 ```
 
 The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can set `VITE_API_BASE` in `frontend/.env.example` when deploying the UI separately.
+
+## Testing with Postman
+
+1. Start the backend (`mvn spring-boot:run`).
+2. Create a new request in Postman:
+   - Method: `POST`
+   - URL: `http://localhost:8080/api/send-config`
+   - Headers: `Content-Type: application/json`
+3. Use a JSON body like:
+
+```json
+{
+  "deviceNumber": "+15551234567",
+  "patientPhone": "+15550000001",
+  "alertPhone": "+15550000002",
+  "heartbeatInterval": 15,
+  "apn": "your.apn",
+  "serverUrl": "https://example.com/ev12"
+}
+```
+
+If you do not have Vonage credentials yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
