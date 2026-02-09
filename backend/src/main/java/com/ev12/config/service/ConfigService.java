@@ -3,19 +3,29 @@ package com.ev12.config.service;
 import com.ev12.config.model.ConfigRequest;
 import com.ev12.config.model.ConfigResponse;
 import com.ev12.config.model.SmsMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
 public class ConfigService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigService.class);
     private final SmsCommandBuilder commandBuilder = new SmsCommandBuilder();
 
     public ConfigResponse sendConfiguration(ConfigRequest request) {
         List<SmsMessage> messages = commandBuilder.build(request);
+        if (!messages.isEmpty()) {
+            String payloadPreview = messages.stream()
+                .map(SmsMessage::getBody)
+                .collect(Collectors.joining(" | "));
+            LOGGER.info("Prepared SMS payload for {}: {}", request.getDeviceNumber(), payloadPreview);
+        }
         String apiKey = System.getenv("VONAGE_API_KEY");
         String apiSecret = System.getenv("VONAGE_API_SECRET");
         String fromNumber = System.getenv("VONAGE_FROM_NUMBER");
