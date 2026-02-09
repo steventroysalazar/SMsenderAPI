@@ -65,6 +65,15 @@ input {
   font-size: 1rem;
 }
 
+select,
+textarea {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #cbd5f5;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
 input:focus {
   outline: 2px solid #6366f1;
   border-color: transparent;
@@ -72,6 +81,31 @@ input:focus {
 
 small {
   color: #64748b;
+}
+
+.section {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.section h2 {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.command-preview {
+  width: 100%;
+  resize: vertical;
+  min-height: 90px;
 }
 
 button {

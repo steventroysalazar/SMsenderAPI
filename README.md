@@ -43,11 +43,33 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can 
 ```json
 {
   "deviceNumber": "+15551234567",
-  "patientPhone": "+15550000001",
-  "alertPhone": "+15550000002",
-  "heartbeatInterval": 15,
-  "apn": "your.apn",
-  "serverUrl": "https://example.com/ev12"
+  "contactNumber": "+15550000001",
+  "smsPassword": "123456",
+  "requestLocation": true,
+  "wifiEnabled": true,
+  "micVolume": 10,
+  "speakerVolume": 90,
+  "prefixEnabled": true,
+  "prefixName": "Emma",
+  "checkBattery": true,
+  "fallDownEnabled": true,
+  "fallDownSensitivity": 5,
+  "fallDownCall": true,
+  "noMotionEnabled": true,
+  "noMotionTime": "80M",
+  "noMotionCall": true,
+  "apnEnabled": true,
+  "apn": "internet",
+  "serverEnabled": true,
+  "serverHost": "www.smart-locator.com",
+  "serverPort": 6060,
+  "gprsEnabled": true,
+  "workingMode": "mode2",
+  "workingModeInterval": "03M",
+  "workingModeNoMotionInterval": "01H",
+  "continuousLocateInterval": "10s",
+  "continuousLocateDuration": "600s",
+  "checkStatus": true
 }
 ```
 
