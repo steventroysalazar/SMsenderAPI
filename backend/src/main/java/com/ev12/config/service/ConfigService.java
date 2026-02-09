@@ -1,0 +1,25 @@
+package com.ev12.config.service;
+
+import com.ev12.config.model.ConfigRequest;
+import com.ev12.config.model.ConfigResponse;
+import com.ev12.config.model.SmsMessage;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ConfigService {
+    private final SmsCommandBuilder commandBuilder = new SmsCommandBuilder();
+
+    public ConfigResponse sendConfiguration(ConfigRequest request) {
+        List<SmsMessage> messages = commandBuilder.build(request);
+        VonageSmsSender sender = new VonageSmsSender(
+            System.getenv("VONAGE_API_KEY"),
+            System.getenv("VONAGE_API_SECRET"),
+            System.getenv("VONAGE_FROM_NUMBER"),
+            Boolean.parseBoolean(System.getenv().getOrDefault("SMS_DRY_RUN", "true"))
+        );
+        sender.send(messages);
+        return new ConfigResponse(request.getDeviceNumber(), messages);
+    }
+}
