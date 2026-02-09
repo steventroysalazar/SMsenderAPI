@@ -15,7 +15,7 @@ Environment variables for Vonage (see `backend/.env.example`):
 - `VONAGE_API_SECRET`
 - `VONAGE_FROM_NUMBER`
 
-Set `SMS_DRY_RUN=true` (default) to log messages instead of sending real SMS.
+Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If you have not configured Vonage credentials yet, enable dry-run to prevent API errors.
 
 The API endpoint is `POST /api/send-config`.
 
