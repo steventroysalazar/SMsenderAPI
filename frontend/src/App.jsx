@@ -21,10 +21,29 @@ export default function App() {
   const [formData, setFormData] = useState(initialState);
   const [status, setStatus] = useState({ type: 'idle', message: '' });
   const [messages, setMessages] = useState([]);
+  const [inboundMessages, setInboundMessages] = useState([]);
+  const [inboundStatus, setInboundStatus] = useState({ type: 'idle', message: '' });
+
+  const apiBase = import.meta.env.VITE_API_BASE || '/api';
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const fetchInboundMessages = async () => {
+    setInboundStatus({ type: 'loading', message: 'Loading device replies...' });
+    try {
+      const response = await fetch(`${apiBase}/inbound-messages`);
+      if (!response.ok) {
+        throw new Error(`Failed to load replies (${response.status}).`);
+      }
+      const data = await response.json();
+      setInboundMessages(data);
+      setInboundStatus({ type: 'success', message: 'Replies updated.' });
+    } catch (error) {
+      setInboundStatus({ type: 'error', message: error.message });
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -40,7 +59,6 @@ export default function App() {
     };
 
     try {
-      const apiBase = import.meta.env.VITE_API_BASE || '/api';
       const response = await fetch(`${apiBase}/send-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,6 +126,29 @@ export default function App() {
           </div>
         )}
 
+        <div className="message-list">
+          <div className="message-header">
+            <h2>Device replies</h2>
+            <button type="button" className="secondary" onClick={fetchInboundMessages}>
+              Refresh replies
+            </button>
+          </div>
+          {inboundStatus.type !== 'idle' && (
+            <p className={`status ${inboundStatus.type}`}>{inboundStatus.message}</p>
+          )}
+          {inboundMessages.length === 0 ? (
+            <p className="empty-state">No replies yet. After sending commands, refresh to check.</p>
+          ) : (
+            <ul>
+              {inboundMessages.map((message, index) => (
+                <li key={`${message.receivedAt}-${index}`}>
+                  <strong>{message.from || 'Unknown'}:</strong> {message.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="form">
           <label className="field">
             <span>Device phone number</span>
@@ -141,6 +182,10 @@ export default function App() {
           <button type="submit" disabled={status.type === 'loading'}>
             {status.type === 'loading' ? 'Sending...' : 'Send configuration SMS'}
           </button>
+          <p className="hint">
+            Commands are combined into a single SMS payload. If the payload exceeds 150
+            characters, it will be split into two messages.
+          </p>
         </form>
       </main>
     </div>

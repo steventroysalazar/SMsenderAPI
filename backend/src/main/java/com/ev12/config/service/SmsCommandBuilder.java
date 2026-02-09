@@ -9,24 +9,46 @@ import java.util.Optional;
 
 public class SmsCommandBuilder {
     public List<SmsMessage> build(ConfigRequest request) {
-        List<SmsMessage> messages = new ArrayList<>();
-        String deviceNumber = request.getDeviceNumber();
+        String commandPayload = buildCommandPayload(request);
+        return splitPayload(request.getDeviceNumber(), commandPayload, 150);
+    }
 
-        addIfPresent(messages, deviceNumber, "PTPHONE:%s", request.getPatientPhone());
-        addIfPresent(messages, deviceNumber, "ALERT:%s", request.getAlertPhone());
+    private String buildCommandPayload(ConfigRequest request) {
+        List<String> commands = new ArrayList<>();
+        addIfPresent(commands, "PTPHONE:%s", request.getPatientPhone());
+        addIfPresent(commands, "ALERT:%s", request.getAlertPhone());
         if (request.getHeartbeatInterval() != null) {
-            messages.add(new SmsMessage(deviceNumber, "HEART:" + request.getHeartbeatInterval()));
+            commands.add("HEART:" + request.getHeartbeatInterval());
         }
-        addIfPresent(messages, deviceNumber, "APN:%s", request.getApn());
-        addIfPresent(messages, deviceNumber, "SERVER:%s", request.getServerUrl());
+        addIfPresent(commands, "APN:%s", request.getApn());
+        addIfPresent(commands, "SERVER:%s", request.getServerUrl());
+
+        return String.join(";", commands);
+    }
+
+    private List<SmsMessage> splitPayload(String deviceNumber, String payload, int maxLength) {
+        List<SmsMessage> messages = new ArrayList<>();
+        if (payload.isBlank()) {
+            return messages;
+        }
+
+        if (payload.length() <= maxLength) {
+            messages.add(new SmsMessage(deviceNumber, payload));
+            return messages;
+        }
+
+        String firstChunk = payload.substring(0, maxLength);
+        String remainder = payload.substring(maxLength);
+        messages.add(new SmsMessage(deviceNumber, firstChunk));
+        messages.add(new SmsMessage(deviceNumber, remainder));
 
         return messages;
     }
 
-    private void addIfPresent(List<SmsMessage> messages, String deviceNumber, String template, String value) {
+    private void addIfPresent(List<String> commands, String template, String value) {
         Optional.ofNullable(value)
             .map(String::trim)
             .filter(val -> !val.isEmpty())
-            .ifPresent(val -> messages.add(new SmsMessage(deviceNumber, String.format(template, val))));
+            .ifPresent(val -> commands.add(String.format(template, val)));
     }
 }

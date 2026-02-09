@@ -19,6 +19,8 @@ Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `
 
 The API endpoint is `POST /api/send-config`.
 
+Configuration commands are combined into a single SMS payload separated by semicolons. If the payload exceeds 150 characters, it is split into two messages (first 150 chars, then the remainder).
+
 ## Frontend (React + Vite)
 
 ```bash
@@ -50,3 +52,13 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can 
 ```
 
 If you do not have Vonage credentials yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
+
+## Receiving device replies
+
+Configure Vonage inbound SMS webhook to:
+
+```
+POST http://<your-server>/api/inbound-sms
+```
+
+The frontend can poll `GET /api/inbound-messages` to display replies.

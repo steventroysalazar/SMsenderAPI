@@ -121,6 +121,51 @@ button:disabled {
   background: #f8fafc;
 }
 
+.message-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.secondary {
+  background: #e2e8f0;
+  color: #1e293b;
+  box-shadow: none;
+}
+
+.secondary:hover {
+  background: #cbd5f5;
+}
+
+.status {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.status.loading {
+  color: #1d4ed8;
+}
+
+.status.success {
+  color: #166534;
+}
+
+.status.error {
+  color: #b91c1c;
+}
+
+.empty-state {
+  color: #64748b;
+  margin: 0.75rem 0 0;
+}
+
+.hint {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 .message-list ul {
   margin: 0.75rem 0 0 1rem;
   padding: 0;
