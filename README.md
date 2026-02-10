@@ -1,6 +1,6 @@
 # SMsenderAPI
 
-This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through Vonage (Nexmo).
+This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through PhilSMS.
 
 ## Backend (Spring Boot)
 
@@ -9,13 +9,13 @@ cd backend
 mvn spring-boot:run
 ```
 
-Environment variables for Vonage (see `backend/.env.example`):
+Environment variables for PhilSMS (see `backend/.env.example`):
 
-- `VONAGE_API_KEY`
-- `VONAGE_API_SECRET`
-- `VONAGE_FROM_NUMBER`
+- `PHILSMS_BASE_URL`
+- `PHILSMS_API_TOKEN`
+- `PHILSMS_SENDER_ID`
 
-Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If you have not configured Vonage credentials yet, enable dry-run to prevent API errors.
+Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If you have not configured PhilSMS credentials yet, enable dry-run to prevent API errors.
 
 The API endpoint is `POST /api/send-config`.
 
@@ -73,11 +73,11 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can 
 }
 ```
 
-If you do not have Vonage credentials yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
+If you do not have PhilSMS credentials yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
 
 ## Receiving device replies
 
-Configure Vonage inbound SMS webhook to:
+Configure your SMS provider inbound webhook to:
 
 ```
 POST http://<your-server>/api/inbound-sms
