@@ -12,8 +12,11 @@ mvn spring-boot:run
 Environment variables for PhilSMS (see `backend/.env.example`):
 
 - `PHILSMS_BASE_URL`
+- `PHILSMS_MESSAGES_PATH`
 - `PHILSMS_API_TOKEN`
 - `PHILSMS_SENDER_ID`
+
+Set `PHILSMS_MESSAGES_PATH` to the exact PhilSMS send endpoint path for your account if `/messages` does not work.
 
 Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If you have not configured PhilSMS credentials yet, enable dry-run to prevent API errors.
 

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 
 @Service
 public class ConfigService {
@@ -27,8 +28,9 @@ public class ConfigService {
             LOGGER.info("Prepared SMS payload for {}: {}", request.getDeviceNumber(), payloadPreview);
         }
         String baseUrl = System.getenv().getOrDefault("PHILSMS_BASE_URL", "https://dashboard.philsms.com/api/v3");
-        String apiToken = "1315|xfUzDUQrpRYXoy1oKo7Hl3iTexT6JXMx4Y9p5J2w612c7c81";
-        String senderId = "EV12SMS";
+        String messagesPath = System.getenv().getOrDefault("PHILSMS_MESSAGES_PATH", "/messages");
+        String apiToken = System.getenv("PHILSMS_API_TOKEN");
+        String senderId = System.getenv("PHILSMS_SENDER_ID");
         boolean dryRun = Boolean.parseBoolean(System.getenv().getOrDefault("SMS_DRY_RUN", "false"));
 
         if (!dryRun && (isBlank(apiToken) || isBlank(senderId))) {
@@ -38,8 +40,16 @@ public class ConfigService {
             );
         }
 
-        PhilSmsSender sender = new PhilSmsSender(baseUrl, apiToken, senderId, dryRun);
-        sender.send(messages);
+        PhilSmsSender sender = new PhilSmsSender(baseUrl, apiToken, senderId, messagesPath, dryRun);
+        try {
+            sender.send(messages);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(
+                BAD_GATEWAY,
+                "SMS provider request failed. Verify PHILSMS_BASE_URL/PHILSMS_MESSAGES_PATH and credentials. " + ex.getMessage(),
+                ex
+            );
+        }
         return new ConfigResponse(request.getDeviceNumber(), messages);
     }
 

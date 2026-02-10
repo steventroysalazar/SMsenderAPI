@@ -17,13 +17,15 @@ public class PhilSmsSender {
     private final String baseUrl;
     private final String apiToken;
     private final String senderId;
+    private final String messagesPath;
     private final boolean dryRun;
     private final HttpClient httpClient;
 
-    public PhilSmsSender(String baseUrl, String apiToken, String senderId, boolean dryRun) {
+    public PhilSmsSender(String baseUrl, String apiToken, String senderId, String messagesPath, boolean dryRun) {
         this.baseUrl = baseUrl;
         this.apiToken = apiToken;
         this.senderId = senderId;
+        this.messagesPath = messagesPath;
         this.dryRun = dryRun;
         this.httpClient = HttpClient.newHttpClient();
     }
@@ -48,16 +50,19 @@ public class PhilSmsSender {
         );
 
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(trimTrailingSlash(baseUrl) + "/messages"))
+            .uri(URI.create(trimTrailingSlash(baseUrl) + normalizePath(messagesPath)))
             .header("Authorization", "Bearer " + apiToken)
             .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(payload))
             .build();
 
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("PhilSMS send failed with status " + response.statusCode() + ": " + response.body());
+                throw new IllegalStateException(
+                    "PhilSMS send failed with status " + response.statusCode() + ": " + summarizeBody(response.body())
+                );
             }
             LOGGER.info("PhilSMS accepted message for {}", message.getTo());
         } catch (InterruptedException e) {
@@ -73,6 +78,24 @@ public class PhilSmsSender {
             return value.substring(0, value.length() - 1);
         }
         return value;
+    }
+
+    private String normalizePath(String value) {
+        if (value == null || value.isBlank()) {
+            return "/messages";
+        }
+        return value.startsWith("/") ? value : "/" + value;
+    }
+
+    private String summarizeBody(String body) {
+        if (body == null || body.isBlank()) {
+            return "<empty body>";
+        }
+        String oneLine = body.replaceAll("\\s+", " ").trim();
+        if (oneLine.length() > 220) {
+            return oneLine.substring(0, 220) + "...";
+        }
+        return oneLine;
     }
 
     private String escapeJson(String value) {
