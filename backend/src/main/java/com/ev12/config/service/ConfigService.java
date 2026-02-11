@@ -11,8 +11,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
 public class ConfigService {
@@ -27,41 +27,30 @@ public class ConfigService {
                 .collect(Collectors.joining(" | "));
             LOGGER.info("Prepared SMS payload for {}: {}", request.getDeviceNumber(), payloadPreview);
         }
-        String baseUrl = System.getenv().getOrDefault("PHILSMS_BASE_URL", "https://dashboard.philsms.com/api/v3");
-        String messagesPath = System.getenv().getOrDefault("PHILSMS_MESSAGES_PATH", "/messages");
-        String sendUrl = System.getenv("PHILSMS_SEND_URL");
-        String contentType = System.getenv().getOrDefault("PHILSMS_CONTENT_TYPE", "application/json");
-        boolean includeTokenInBody = Boolean.parseBoolean(System.getenv().getOrDefault("PHILSMS_TOKEN_IN_BODY", "false"));
-        String apiToken = System.getenv("PHILSMS_API_TOKEN");
-        String senderId = System.getenv("PHILSMS_SENDER_ID");
+
+        String sendUrl = System.getenv().getOrDefault("KUDOSITY_SEND_URL", "https://api.kudosity.com/v1/messages");
+        String apiKey = System.getenv("KUDOSITY_API_KEY");
+        String senderId = System.getenv("KUDOSITY_SENDER_ID");
         boolean dryRun = Boolean.parseBoolean(System.getenv().getOrDefault("SMS_DRY_RUN", "false"));
 
-        if (!dryRun && (isBlank(apiToken) || isBlank(senderId))) {
+        if (!dryRun && (isBlank(apiKey) || isBlank(senderId))) {
             throw new ResponseStatusException(
                 BAD_REQUEST,
-                "PhilSMS credentials are missing. Set PHILSMS_API_TOKEN and PHILSMS_SENDER_ID or enable SMS_DRY_RUN."
+                "Kudosity credentials are missing. Set KUDOSITY_API_KEY and KUDOSITY_SENDER_ID or enable SMS_DRY_RUN."
             );
         }
 
-        PhilSmsSender sender = new PhilSmsSender(
-            baseUrl,
-            apiToken,
-            senderId,
-            messagesPath,
-            sendUrl,
-            contentType,
-            includeTokenInBody,
-            dryRun
-        );
+        KudositySmsSender sender = new KudositySmsSender(sendUrl, apiKey, senderId, dryRun);
         try {
             sender.send(messages);
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(
                 BAD_GATEWAY,
-                "SMS provider request failed. Verify PHILSMS_BASE_URL/PHILSMS_MESSAGES_PATH and credentials. " + ex.getMessage(),
+                "SMS provider request failed. Verify KUDOSITY_SEND_URL and credentials. " + ex.getMessage(),
                 ex
             );
         }
+
         return new ConfigResponse(request.getDeviceNumber(), messages);
     }
 
