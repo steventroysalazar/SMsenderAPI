@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const initialState = {
   deviceNumber: '',
@@ -140,6 +140,13 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [inboundMessages, setInboundMessages] = useState([]);
   const [inboundStatus, setInboundStatus] = useState({ type: 'idle', message: '' });
+  const [polling, setPolling] = useState({
+    active: false,
+    since: null,
+    phone: '',
+    message: ''
+  });
+  const pollTimerRef = useRef(null);
 
   const apiBase = import.meta.env.VITE_API_BASE || '/api';
   const commandPreview = useMemo(() => buildCommandPreview(formData), [formData]);
@@ -152,16 +159,71 @@ export default function App() {
     }));
   };
 
-  const fetchInboundMessages = async () => {
-    setInboundStatus({ type: 'loading', message: 'Loading device replies...' });
+  const mergeInboundMessages = (incoming) => {
+    if (!Array.isArray(incoming) || incoming.length === 0) {
+      return;
+    }
+
+    setInboundMessages((prev) => {
+      const map = new Map(prev.map((item) => [`${item.receivedAt}-${item.from}-${item.text}`, item]));
+      incoming.forEach((item) => {
+        map.set(`${item.receivedAt}-${item.from}-${item.text}`, item);
+      });
+      return Array.from(map.values()).sort(
+        (a, b) => new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime()
+      );
+    });
+  };
+
+  const fetchInboundMessages = async ({ since, phone, silent = false } = {}) => {
+    if (!silent) {
+      setInboundStatus({ type: 'loading', message: 'Loading device replies...' });
+    }
+
+    const params = new URLSearchParams();
+    if (since) {
+      params.set('since', String(since));
+    }
+    params.set('limit', '100');
+    if (phone) {
+      params.set('phone', phone);
+    }
+
     try {
-      const response = await fetch(`${apiBase}/inbound-messages`);
+      const query = params.toString();
+      const response = await fetch(`${apiBase}/inbound-messages${query ? `?${query}` : ''}`);
       if (!response.ok) {
         throw new Error(`Failed to load replies (${response.status}).`);
       }
+
       const data = await response.json();
-      setInboundMessages(data);
-      setInboundStatus({ type: 'success', message: 'Replies updated.' });
+      mergeInboundMessages(data);
+
+      let nextSince = since;
+      if (Array.isArray(data) && data.length > 0) {
+        const maxEpochMs = Math.max(
+          ...data.map((item) => new Date(item.receivedAt || Date.now()).getTime())
+        );
+        nextSince = Math.floor(maxEpochMs / 1000);
+      }
+
+      if (polling.active) {
+        setPolling((prev) => ({
+          ...prev,
+          since: nextSince ?? prev.since,
+          message: 'Waiting for new device replies...'
+        }));
+      }
+
+      setInboundStatus({
+        type: 'success',
+        message:
+          Array.isArray(data) && data.length > 0
+            ? `Received ${data.length} new message(s).`
+            : polling.active
+              ? 'Polling active. No new replies yet.'
+              : 'Replies updated.'
+      });
     } catch (error) {
       setInboundStatus({ type: 'error', message: error.message });
     }
@@ -219,14 +281,56 @@ export default function App() {
 
       const data = await response.json();
       setMessages(data.messages || []);
+      const nowSince = Math.floor(Date.now() / 1000);
       setStatus({
         type: 'success',
-        message: `Sent ${data.messages?.length || 0} messages to ${data.deviceNumber}.`
+        message: `Sent ${data.messages?.length || 0} messages to ${data.deviceNumber}. Starting live reply polling...`
+      });
+      setPolling({
+        active: true,
+        since: nowSince,
+        phone: formData.deviceNumber || data.deviceNumber || '',
+        message: 'Waiting for device replies...'
+      });
+      fetchInboundMessages({
+        since: nowSince,
+        phone: formData.deviceNumber || data.deviceNumber || '',
+        silent: true
       });
     } catch (error) {
       setStatus({ type: 'error', message: error.message });
     }
   };
+
+
+  const stopPolling = () => {
+    setPolling((prev) => ({ ...prev, active: false, message: 'Polling stopped.' }));
+  };
+
+  useEffect(() => {
+    if (!polling.active) {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+    }
+
+    pollTimerRef.current = setInterval(() => {
+      fetchInboundMessages({ since: polling.since, phone: polling.phone, silent: true });
+    }, 3000);
+
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [polling.active, polling.since, polling.phone]);
 
   return (
     <div className="page">
@@ -259,10 +363,18 @@ export default function App() {
         <div className="message-list">
           <div className="message-header">
             <h2>Device replies</h2>
-            <button type="button" className="secondary" onClick={fetchInboundMessages}>
-              Refresh replies
-            </button>
+            <div className="reply-actions">
+              <button type="button" className="secondary" onClick={() => fetchInboundMessages()}>
+                Refresh replies
+              </button>
+              {polling.active ? (
+                <button type="button" className="secondary" onClick={stopPolling}>
+                  Stop polling
+                </button>
+              ) : null}
+            </div>
           </div>
+          {polling.message ? <p className="status loading">{polling.message}</p> : null}
           {inboundStatus.type !== 'idle' && (
             <p className={`status ${inboundStatus.type}`}>{inboundStatus.message}</p>
           )}

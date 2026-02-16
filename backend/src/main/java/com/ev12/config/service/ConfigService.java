@@ -28,25 +28,24 @@ public class ConfigService {
             LOGGER.info("Prepared SMS payload for {}: {}", request.getDeviceNumber(), payloadPreview);
         }
 
-        String sendUrl = System.getenv().getOrDefault("KUDOSITY_SEND_URL", "https://api.kudosity.com/v1/messages");
-        String apiKey = System.getenv("KUDOSITY_API_KEY");
-        String senderId = System.getenv("KUDOSITY_SENDER_ID");
+        String sendUrl = System.getenv().getOrDefault("LOCAL_SMS_SEND_URL", "http://127.0.0.1:3000/api/send-sms");
+        String authorizationValue = System.getenv("LOCAL_SMS_AUTHORIZATION");
         boolean dryRun = Boolean.parseBoolean(System.getenv().getOrDefault("SMS_DRY_RUN", "false"));
 
-        if (!dryRun && (isBlank(apiKey) || isBlank(senderId))) {
+        if (!dryRun && isBlank(sendUrl)) {
             throw new ResponseStatusException(
                 BAD_REQUEST,
-                "Kudosity credentials are missing. Set KUDOSITY_API_KEY and KUDOSITY_SENDER_ID or enable SMS_DRY_RUN."
+                "Local gateway config missing. Set LOCAL_SMS_SEND_URL or enable SMS_DRY_RUN."
             );
         }
 
-        KudositySmsSender sender = new KudositySmsSender(sendUrl, apiKey, senderId, dryRun);
+        LocalSmsSender sender = new LocalSmsSender(sendUrl, authorizationValue, dryRun);
         try {
             sender.send(messages);
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(
                 BAD_GATEWAY,
-                "SMS provider request failed. Verify KUDOSITY_SEND_URL and credentials. " + ex.getMessage(),
+                "SMS gateway request failed. Verify LOCAL_SMS_SEND_URL and local gateway status. " + ex.getMessage(),
                 ex
             );
         }

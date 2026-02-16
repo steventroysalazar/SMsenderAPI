@@ -162,6 +162,12 @@ button:disabled {
   gap: 1rem;
 }
 
+.reply-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .secondary {
   background: #e2e8f0;
   color: #1e293b;

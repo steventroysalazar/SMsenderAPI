@@ -1,6 +1,6 @@
 # SMsenderAPI
 
-This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through Kudosity.
+This repository contains a Spring Boot API and a React web UI for configuring the EV12 remote patient monitoring SOS button. The UI collects configuration values and the backend sends the corresponding SMS command sequence through a local SMS gateway service.
 
 ## Backend (Spring Boot)
 
@@ -9,27 +9,42 @@ cd backend
 mvn spring-boot:run
 ```
 
-Environment variables for Kudosity (see `backend/.env.example`):
+Environment variables for the local gateway (see `backend/.env.example`):
 
-- `KUDOSITY_SEND_URL`
-- `KUDOSITY_API_KEY`
-- `KUDOSITY_SENDER_ID`
+- `LOCAL_SMS_SEND_URL`
+- `LOCAL_SMS_AUTHORIZATION` (optional, raw value for `Authorization` header)
+- `LOCAL_SMS_RECEIVE_URL` (optional, for polling inbound device replies)
 
-Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If you have not configured Kudosity credentials yet, enable dry-run to prevent API errors.
+Set `SMS_DRY_RUN=true` to log messages instead of sending real SMS (default is `false`). If your local gateway is not yet running, enable dry-run to validate command payloads first.
 
 The API endpoint is `POST /api/send-config`.
 
 Configuration commands are combined into a single SMS payload separated by semicolons. If the payload exceeds 150 characters, it is split into two messages (first 150 chars, then the remainder).
 
-### Kudosity troubleshooting
+### Local gateway troubleshooting
 
-If you see HTML in the backend error body, your request is likely hitting a web/dashboard route instead of the API route.
+If you get `502` from `/api/send-config`, your local SMS gateway endpoint is unreachable or returned a non-2xx response.
 
 Try these in order:
 
-1. Set `SMS_DRY_RUN=true` first to verify command construction works without provider calls.
-2. Confirm `KUDOSITY_SEND_URL` matches the exact SMS send endpoint from Kudosity docs/account.
-3. Verify `KUDOSITY_API_KEY` and `KUDOSITY_SENDER_ID` are valid for that endpoint.
+1. Set `SMS_DRY_RUN=true` first to verify command construction works without gateway calls.
+2. Confirm `LOCAL_SMS_SEND_URL` points to your local gateway send endpoint.
+3. Verify your local gateway expects JSON body in this shape: `{"to":"...","message":"..."}`.
+4. If your gateway requires auth, set `LOCAL_SMS_AUTHORIZATION` to the exact header value (for example your API key UUID).
+
+
+### Incremental polling flow (device replies)
+
+After pressing **Send configuration SMS**, the web app starts polling `GET /api/inbound-messages` every ~3 seconds using:
+
+- `since=<unix_timestamp_from_send_click>`
+- `limit=100`
+- `phone=<device_number>`
+
+Backend behavior:
+
+- If `LOCAL_SMS_RECEIVE_URL` is set, backend fetches from your local gateway receive endpoint and filters by `since` + `phone`.
+- If `LOCAL_SMS_RECEIVE_URL` is not set, backend falls back to messages stored via `POST /api/inbound-sms`.
 
 ## Frontend (React + Vite)
 
@@ -83,7 +98,7 @@ The Vite dev server proxies `/api` requests to `http://localhost:8080`. You can 
 }
 ```
 
-If you do not have Kudosity credentials yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
+If your local gateway is not ready yet, set `SMS_DRY_RUN=true` so the request succeeds without sending real SMS.
 
 ## Receiving device replies
 
